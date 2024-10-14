@@ -1,21 +1,10 @@
-/* static/css/styles.css */
-
-/* Reset some default browser styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Body styling */
 body {
     font-family: Arial, sans-serif;
-    line-height: 1.6;
+    margin: 0;
+    padding: 0;
     background-color: #f4f4f4;
-    color: #333;
 }
 
-/* Header styling */
 header {
     background: #35424a;
     color: #ffffff;
@@ -23,58 +12,45 @@ header {
     text-align: center;
 }
 
-header h1 {
-    margin-bottom: 10px;
+h1, h2 {
+    margin: 0;
 }
 
-/* Navigation styling */
-nav {
-    margin-top: 10px;
-}
-
-nav ul {
-    list-style: none;
-}
-
-nav ul li {
-    display: inline;
-    margin: 0 15px;
-}
-
-nav ul li a {
-    color: #ffffff;
-    text-decoration: none;
-}
-
-/* Main content styling */
 main {
     padding: 20px;
 }
 
-h2 {
-    color: #35424a;
+.summary, .visualizations, .details {
+    background: #ffffff;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Footer styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #35424a;
+    color: white;
+}
+
 footer {
-    background: #35424a;
-    color: #ffffff;
     text-align: center;
     padding: 10px 0;
-    position: relative;
-    bottom: 0;
-    width: 100%;
+    background: #35424a;
+    color: #ffffff;
 }
-
-footer p {
-    margin: 0;
-}
-
-/* Responsive design */
-@media (max-width: 600px) {
-    nav ul li {
-        display: block;
-        margin: 10px 0;
-    }
-}
- 

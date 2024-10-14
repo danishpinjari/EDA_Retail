@@ -1,31 +1,58 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/css/styles.css">
     <title>Retail Sales Analysis</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <header>
-        <h1>Welcome to Retail Sales Analysis</h1>
-        <nav>
-            <ul>
-                <li><a href="/templates/index.html">Home</a></li>
-                <li><a href="/templates/about.html">About</a></li>
-                <li><a href="/templates/results.html">Results</a></li>
-            </ul>
-        </nav>
+        <h1>Retail Sales Analysis Dashboard</h1>
     </header>
+    
     <main>
-        <h2>Data Analysis Overview</h2>
-        <p>This web application provides insights into retail sales data.</p>
-        <!-- Add more content as needed -->
+        <section class="summary">
+            <h2>Key Insights</h2>
+            <div id="insights"></div>
+        </section>
+
+        <section class="visualizations">
+            <h2>Sales by Product Category</h2>
+            <canvas id="categoryChart"></canvas>
+
+            <h2>Sales by Month</h2>
+            <canvas id="monthChart"></canvas>
+        </section>
+
+        <section class="details">
+            <h2>Transaction Details</h2>
+            <table id="transactionTable">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date</th>
+                        <th>Customer ID</th>
+                        <th>Gender</th>
+                        <th>Age</th>
+                        <th>Product Category</th>
+                        <th>Quantity</th>
+                        <th>Price per Unit</th>
+                        <th>Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated here by JavaScript -->
+                </tbody>
+            </table>
+        </section>
     </main>
+
     <footer>
-        <p>&copy; 2024 Retail Sales Analysis Project</p>
+        <p>&copy; 2024 Retail Analysis Dashboard</p>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/scripts.js"></script>
 </body>
 </html>
- 
