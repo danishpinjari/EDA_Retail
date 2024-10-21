@@ -19,8 +19,8 @@
 
         <section class="input-section">
             <h2>Analyze Transaction</h2>
-            <label for="transactionId">Enter Transaction ID:</label>
-            <input type="text" id="transactionId" placeholder="e.g., CUST001">
+            <label for="transactionIdAnalyze">Enter Transaction ID:</label>
+            <input type="number" id="transactionIdAnalyze" placeholder="e.g., 1" required>
             <button id="analyzeButton">Analyze</button>
             <div id="transactionResult"></div>
         </section>
@@ -58,8 +58,8 @@
         <section class="transaction-input">
             <h2>Find Transaction by ID</h2>
             <form id="transactionForm">
-                <label for="transactionId">Transaction ID:</label>
-                <input type="number" id="transactionId" name="transactionId" required>
+                <label for="transactionIdInput">Transaction ID:</label>
+                <input type="number" id="transactionIdInput" name="transactionId" required>
                 <button type="submit">Get Transaction</button>
             </form>
             <div id="transactionOutput"></div>
@@ -70,42 +70,17 @@
     <footer>
         <p>&copy; 2024 Retail Analysis Dashboard</p>
     </footer>
-    <script>
 
-         // Fetch a specific transaction by ID
-    document.getElementById('transactionForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const transactionId = document.getElementById('transactionId').value;
-        
-        fetch(`/transactions/${transactionId}`)
-            .then(response => response.json())
-            .then(data => {
-                const outputDiv = document.getElementById('transactionOutput');
-                if (data.error) {
-                    outputDiv.innerHTML = `<p>${data.error}</p>`;
-                } else {
-                    outputDiv.innerHTML = `
-                        <p>Transaction ID: ${data.transaction_id}</p>
-                        <p>Date: ${data.date}</p>
-                        <p>Customer ID: ${data.customer_id}</p>
-                        <p>Gender: ${data.gender}</p>
-                        <p>Age: ${data.age}</p>
-                        <p>Product Category: ${data.product_category}</p>
-                        <p>Quantity: ${data.quantity}</p>
-                        <p>Price per Unit: $${data.price_per_unit}</p>
-                        <p>Total Amount: $${data.total_amount}</p>
-                    `;
-                }
-            });
-    });
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <script>
         // Fetch insights from the backend
         fetch('/insights')
             .then(response => response.json())
             .then(data => {
                 const insightsDiv = document.getElementById('insights');
                 insightsDiv.innerHTML = `
-                    <p>Total Sales: $${data.total_sales}</p>
+                    <p>Total Sales: $${data.total_sales.toFixed(2)}</p>
                     <p>Average Age: ${data.average_age}</p>
                     <p>Male Customers: ${data.male_count}</p>
                     <p>Female Customers: ${data.female_count}</p>
@@ -165,23 +140,35 @@
                 });
             });
 
-        // Fetch transactions from the backend
+        // Fetch all transactions from the backend and populate the table
         fetch('/transactions')
             .then(response => response.json())
             .then(transactions => {
                 const transactionTable = document.getElementById('transactionTable').querySelector('tbody');
                 transactions.forEach(transaction => {
                     const row = transactionTable.insertRow();
-                    Object.values(transaction).forEach(text => {
+                    Object.values(transaction).forEach(value => {
                         const cell = row.insertCell();
-                        cell.textContent = text;
+                        cell.textContent = value;
                     });
                 });
+            });
 
-                // Add event listener for the analyze button
-                document.getElementById('analyzeButton').addEventListener('click', () => {
-                    const transactionId = document.getElementById('transactionId').value;
-                    const transaction = transactions.find(t => t['Transaction ID'] === transactionId);
+        // Analyze a transaction by its ID
+        document.getElementById('analyzeButton').addEventListener('click', () => {
+            const transactionId = document.getElementById('transactionIdAnalyze').value;
+            
+            // Ensure the ID is a valid number
+            if (!transactionId) {
+                document.getElementById('transactionResult').innerHTML = '<p>Please enter a valid Transaction ID.</p>';
+                return;
+            }
+
+            // Fetch all transactions and search for the specific one
+            fetch('/transactions')
+                .then(response => response.json())
+                .then(transactions => {
+                    const transaction = transactions.find(t => t['Transaction ID'] === Number(transactionId));
                     const resultDiv = document.getElementById('transactionResult');
 
                     if (transaction) {
@@ -194,16 +181,41 @@
                             <p><strong>Age:</strong> ${transaction['Age']}</p>
                             <p><strong>Product Category:</strong> ${transaction['Product Category']}</p>
                             <p><strong>Quantity:</strong> ${transaction['Quantity']}</p>
-                            <p><strong>Price per Unit:</strong> $${transaction['Price per Unit']}</p>
-                            <p><strong>Total Amount:</strong> $${transaction['Total Amount']}</p>
+                            <p><strong>Price per Unit:</strong> $${transaction['Price per Unit'].toFixed(2)}</p>
+                            <p><strong>Total Amount:</strong> $${transaction['Total Amount'].toFixed(2)}</p>
                         `;
                     } else {
                         resultDiv.innerHTML = `<p>No transaction found with ID: ${transactionId}</p>`;
                     }
                 });
-            });
+        });
+
+        // Fetch a specific transaction by ID using the form
+        document.getElementById('transactionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const transactionId = document.getElementById('transactionIdInput').value;
+
+            fetch(`/transactions/${transactionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const outputDiv = document.getElementById('transactionOutput');
+                    if (data.error) {
+                        outputDiv.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        outputDiv.innerHTML = `
+                            <p><strong>Transaction ID:</strong> ${data.transaction_id}</p>
+                            <p><strong>Date:</strong> ${data.date}</p>
+                            <p><strong>Customer ID:</strong> ${data.customer_id}</p>
+                            <p><strong>Gender:</strong> ${data.gender}</p>
+                            <p><strong>Age:</strong> ${data.age}</p>
+                            <p><strong>Product Category:</strong> ${data.product_category}</p>
+                            <p><strong>Quantity:</strong> ${data.quantity}</p>
+                            <p><strong>Price per Unit:</strong> $${data.price_per_unit.toFixed(2)}</p>
+                            <p><strong>Total Amount:</strong> $${data.total_amount.toFixed(2)}</p>
+                        `;
+                    }
+                });
+        });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/scripts.js"></script>
 </body>
 </html>
