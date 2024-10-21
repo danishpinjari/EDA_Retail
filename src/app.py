@@ -8,6 +8,7 @@ import pandas as pd
 from src.data_processing import load_data, preprocess_data
 from src.data_visualization import plot_total_amount_by_category, plot_total_amount_by_month
 from pydantic import BaseModel
+from fastapi import HTTPException
 
 app = FastAPI()
 
@@ -92,3 +93,23 @@ async def get_transactions():
         ) for trans in transactions
     ]
 
+# Endpoint to get a specific transaction by Transaction ID
+@app.get("/transactions/{transaction_id}", response_model=Transaction)
+async def get_transaction(transaction_id: int):
+    transaction = ds[ds['Transaction ID'] == transaction_id]
+    
+    if transaction.empty:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    trans = transaction.iloc[0].to_dict()
+    return Transaction(
+        transaction_id=trans['Transaction ID'],
+        date=trans['Date'].strftime('%Y-%m-%d'),
+        customer_id=trans['Customer ID'],
+        gender=trans['Gender'],
+        age=trans['Age'],
+        product_category=trans['Product Category'],
+        quantity=trans['Quantity'],
+        price_per_unit=trans['Price per Unit'],
+        total_amount=trans['Total Amount']
+    )

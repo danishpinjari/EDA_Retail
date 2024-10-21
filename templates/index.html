@@ -17,6 +17,14 @@
             <div id="insights"></div>
         </section>
 
+        <section class="input-section">
+            <h2>Analyze Transaction</h2>
+            <label for="transactionId">Enter Transaction ID:</label>
+            <input type="text" id="transactionId" placeholder="e.g., CUST001">
+            <button id="analyzeButton">Analyze</button>
+            <div id="transactionResult"></div>
+        </section>
+
         <section class="visualizations">
             <h2>Sales by Product Category</h2>
             <canvas id="categoryChart"></canvas>
@@ -46,12 +54,155 @@
                 </tbody>
             </table>
         </section>
+
+        <section class="transaction-input">
+            <h2>Find Transaction by ID</h2>
+            <form id="transactionForm">
+                <label for="transactionId">Transaction ID:</label>
+                <input type="number" id="transactionId" name="transactionId" required>
+                <button type="submit">Get Transaction</button>
+            </form>
+            <div id="transactionOutput"></div>
+        </section>
+
     </main>
 
     <footer>
         <p>&copy; 2024 Retail Analysis Dashboard</p>
     </footer>
+    <script>
 
+         // Fetch a specific transaction by ID
+    document.getElementById('transactionForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const transactionId = document.getElementById('transactionId').value;
+        
+        fetch(`/transactions/${transactionId}`)
+            .then(response => response.json())
+            .then(data => {
+                const outputDiv = document.getElementById('transactionOutput');
+                if (data.error) {
+                    outputDiv.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    outputDiv.innerHTML = `
+                        <p>Transaction ID: ${data.transaction_id}</p>
+                        <p>Date: ${data.date}</p>
+                        <p>Customer ID: ${data.customer_id}</p>
+                        <p>Gender: ${data.gender}</p>
+                        <p>Age: ${data.age}</p>
+                        <p>Product Category: ${data.product_category}</p>
+                        <p>Quantity: ${data.quantity}</p>
+                        <p>Price per Unit: $${data.price_per_unit}</p>
+                        <p>Total Amount: $${data.total_amount}</p>
+                    `;
+                }
+            });
+    });
+    
+        // Fetch insights from the backend
+        fetch('/insights')
+            .then(response => response.json())
+            .then(data => {
+                const insightsDiv = document.getElementById('insights');
+                insightsDiv.innerHTML = `
+                    <p>Total Sales: $${data.total_sales}</p>
+                    <p>Average Age: ${data.average_age}</p>
+                    <p>Male Customers: ${data.male_count}</p>
+                    <p>Female Customers: ${data.female_count}</p>
+                `;
+            });
+
+        // Fetch sales by category from the backend
+        fetch('/sales/category')
+            .then(response => response.json())
+            .then(data => {
+                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(categoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Sales by Product Category',
+                            data: data.data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+
+        // Fetch sales by month from the backend
+        fetch('/sales/month')
+            .then(response => response.json())
+            .then(data => {
+                const monthCtx = document.getElementById('monthChart').getContext('2d');
+                new Chart(monthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Sales by Month',
+                            data: data.data,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+
+        // Fetch transactions from the backend
+        fetch('/transactions')
+            .then(response => response.json())
+            .then(transactions => {
+                const transactionTable = document.getElementById('transactionTable').querySelector('tbody');
+                transactions.forEach(transaction => {
+                    const row = transactionTable.insertRow();
+                    Object.values(transaction).forEach(text => {
+                        const cell = row.insertCell();
+                        cell.textContent = text;
+                    });
+                });
+
+                // Add event listener for the analyze button
+                document.getElementById('analyzeButton').addEventListener('click', () => {
+                    const transactionId = document.getElementById('transactionId').value;
+                    const transaction = transactions.find(t => t['Transaction ID'] === transactionId);
+                    const resultDiv = document.getElementById('transactionResult');
+
+                    if (transaction) {
+                        resultDiv.innerHTML = `
+                            <h3>Transaction Details:</h3>
+                            <p><strong>Transaction ID:</strong> ${transaction['Transaction ID']}</p>
+                            <p><strong>Date:</strong> ${transaction['Date']}</p>
+                            <p><strong>Customer ID:</strong> ${transaction['Customer ID']}</p>
+                            <p><strong>Gender:</strong> ${transaction['Gender']}</p>
+                            <p><strong>Age:</strong> ${transaction['Age']}</p>
+                            <p><strong>Product Category:</strong> ${transaction['Product Category']}</p>
+                            <p><strong>Quantity:</strong> ${transaction['Quantity']}</p>
+                            <p><strong>Price per Unit:</strong> $${transaction['Price per Unit']}</p>
+                            <p><strong>Total Amount:</strong> $${transaction['Total Amount']}</p>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p>No transaction found with ID: ${transactionId}</p>`;
+                    }
+                });
+            });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/scripts.js"></script>
 </body>
