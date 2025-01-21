@@ -10,7 +10,7 @@
     <header>
         <h1>Retail Sales Analysis Dashboard</h1>
     </header>
-    
+
     <main>
         <section class="summary">
             <h2>Key Insights</h2>
@@ -18,11 +18,13 @@
         </section>
 
         <section class="input-section">
-            <h2>Analyze Transaction</h2>
-            <label for="transactionIdAnalyze">Enter Transaction ID:</label>
-            <input type="number" id="transactionIdAnalyze" placeholder="e.g., 1" required>
-            <button id="analyzeButton">Analyze</button>
-            <div id="transactionResult"></div>
+            <form id="analyzeTransactionForm">
+                <h2>Analyze Transaction</h2>
+                <label for="transactionIdAnalyze">Enter Transaction ID:</label>
+                <input type="number" id="transactionIdAnalyze" name="transaction_id" placeholder="e.g., 1" required>
+                <button type="submit">Analyze</button>
+                <div id="transactionResult"></div>
+            </form>
         </section>
 
         <section class="visualizations">
@@ -64,7 +66,6 @@
             </form>
             <div id="transactionOutput"></div>
         </section>
-
     </main>
 
     <footer>
@@ -72,150 +73,147 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <script>
-        // Fetch insights from the backend
-        fetch('/insights')
-            .then(response => response.json())
-            .then(data => {
-                const insightsDiv = document.getElementById('insights');
-                insightsDiv.innerHTML = `
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch insights on page load
+            fetchInsights();
+            // Fetch sales data and render charts
+            fetchSalesData('/sales/category', 'categoryChart', 'bar', 'Sales by Product Category');
+            fetchSalesData('/sales/month', 'monthChart', 'line', 'Sales by Month');
+            // Populate transaction table
+            populateTransactionTable();
+
+            // Event listeners for form submissions
+            document.getElementById('analyzeTransactionForm').addEventListener('submit', analyzeTransaction);
+            document.getElementById('transactionForm').addEventListener('submit', getTransactionById);
+        });
+
+        // Fetch insights (total sales, gender, etc.)
+        async function fetchInsights() {
+            try {
+                const response = await fetch('/insights');  // FastAPI endpoint for insights
+                const data = await response.json();
+                document.getElementById('insights').innerHTML = `
                     <p>Total Sales: $${data.total_sales.toFixed(2)}</p>
                     <p>Average Age: ${data.average_age}</p>
                     <p>Male Customers: ${data.male_count}</p>
                     <p>Female Customers: ${data.female_count}</p>
                 `;
-            });
+            } catch (error) {
+                console.error('Error fetching insights:', error);
+            }
+        }
 
-        // Fetch sales by category from the backend
-        fetch('/sales/category')
-            .then(response => response.json())
-            .then(data => {
-                const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-                new Chart(categoryCtx, {
-                    type: 'bar',
+        // Fetch sales data for charts
+        async function fetchSalesData(url, chartId, chartType, label) {
+            try {
+                const response = await fetch(url);  // FastAPI endpoint for sales data
+                const data = await response.json();
+                const ctx = document.getElementById(chartId).getContext('2d');
+                new Chart(ctx, {
+                    type: chartType,
                     data: {
-                        labels: data.labels,
+                        labels: data.labels,  // Sales categories or months
                         datasets: [{
-                            label: 'Sales by Product Category',
-                            data: data.data,
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            label: label,
+                            data: data.data,  // Data values (sales amounts)
+                            backgroundColor: chartType === 'bar' ? 'rgba(54, 162, 235, 0.2)' : undefined,
                             borderColor: 'rgba(54, 162, 235, 1)',
                             borderWidth: 1
                         }]
                     },
                     options: {
                         scales: {
-                            y: {
-                                beginAtZero: true
-                            }
+                            y: { beginAtZero: true }
                         }
                     }
                 });
-            });
+            } catch (error) {
+                console.error(`Error fetching sales data from ${url}:`, error);
+            }
+        }
 
-        // Fetch sales by month from the backend
-        fetch('/sales/month')
-            .then(response => response.json())
-            .then(data => {
-                const monthCtx = document.getElementById('monthChart').getContext('2d');
-                new Chart(monthCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.labels,
-                        datasets: [{
-                            label: 'Sales by Month',
-                            data: data.data,
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            });
-
-        // Fetch all transactions from the backend and populate the table
-        fetch('/transactions')
-            .then(response => response.json())
-            .then(transactions => {
-                const transactionTable = document.getElementById('transactionTable').querySelector('tbody');
+        // Populate the transaction table on page load
+        async function populateTransactionTable() {
+            try {
+                const response = await fetch('/transactions');  // FastAPI endpoint for all transactions
+                const transactions = await response.json();
+                const tbody = document.getElementById('transactionTable').querySelector('tbody');
                 transactions.forEach(transaction => {
-                    const row = transactionTable.insertRow();
+                    const row = tbody.insertRow();
                     Object.values(transaction).forEach(value => {
                         const cell = row.insertCell();
                         cell.textContent = value;
                     });
                 });
-            });
-
-        // Analyze a transaction by its ID
-        document.getElementById('analyzeButton').addEventListener('click', () => {
-            const transactionId = document.getElementById('transactionIdAnalyze').value;
-            
-            // Ensure the ID is a valid number
-            if (!transactionId) {
-                document.getElementById('transactionResult').innerHTML = '<p>Please enter a valid Transaction ID.</p>';
-                return;
+            } catch (error) {
+                console.error('Error fetching transactions:', error);
             }
+        }
 
-            // Fetch all transactions and search for the specific one
-            fetch('/transactions')
-                .then(response => response.json())
-                .then(transactions => {
-                    const transaction = transactions.find(t => t['Transaction ID'] === Number(transactionId));
-                    const resultDiv = document.getElementById('transactionResult');
+        // Analyze a specific transaction based on entered ID
+        async function analyzeTransaction(event) {
+            event.preventDefault();
+            const transactionId = document.getElementById('transactionIdAnalyze').value;
+            try {
+                const response = await fetch(`/transactions/${transactionId}`);  // FastAPI endpoint for a specific transaction
+                const transaction = await response.json();
+                displayTransactionResult(transaction);
+            } catch (error) {
+                console.error('Error analyzing transaction:', error);
+                displayTransactionResult(null, 'An error occurred while fetching the transaction.');
+            }
+        }
 
-                    if (transaction) {
-                        resultDiv.innerHTML = `
-                            <h3>Transaction Details:</h3>
-                            <p><strong>Transaction ID:</strong> ${transaction['Transaction ID']}</p>
-                            <p><strong>Date:</strong> ${transaction['Date']}</p>
-                            <p><strong>Customer ID:</strong> ${transaction['Customer ID']}</p>
-                            <p><strong>Gender:</strong> ${transaction['Gender']}</p>
-                            <p><strong>Age:</strong> ${transaction['Age']}</p>
-                            <p><strong>Product Category:</strong> ${transaction['Product Category']}</p>
-                            <p><strong>Quantity:</strong> ${transaction['Quantity']}</p>
-                            <p><strong>Price per Unit:</strong> $${transaction['Price per Unit'].toFixed(2)}</p>
-                            <p><strong>Total Amount:</strong> $${transaction['Total Amount'].toFixed(2)}</p>
-                        `;
-                    } else {
-                        resultDiv.innerHTML = `<p>No transaction found with ID: ${transactionId}</p>`;
-                    }
-                });
-        });
-
-        // Fetch a specific transaction by ID using the form
-        document.getElementById('transactionForm').addEventListener('submit', function(event) {
+        // Fetch transaction details based on ID entered in another form
+        async function getTransactionById(event) {
             event.preventDefault();
             const transactionId = document.getElementById('transactionIdInput').value;
+            try {
+                const response = await fetch(`/transactions/${transactionId}`);  // FastAPI endpoint for specific transaction
+                const data = await response.json();
+                displayTransactionDetails(data);
+            } catch (error) {
+                console.error('Error fetching transaction by ID:', error);
+                displayTransactionDetails(null, 'An error occurred while fetching the transaction.');
+            }
+        }
 
-            fetch(`/transactions/${transactionId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const outputDiv = document.getElementById('transactionOutput');
-                    if (data.error) {
-                        outputDiv.innerHTML = `<p>${data.error}</p>`;
-                    } else {
-                        outputDiv.innerHTML = `
-                            <p><strong>Transaction ID:</strong> ${data.transaction_id}</p>
-                            <p><strong>Date:</strong> ${data.date}</p>
-                            <p><strong>Customer ID:</strong> ${data.customer_id}</p>
-                            <p><strong>Gender:</strong> ${data.gender}</p>
-                            <p><strong>Age:</strong> ${data.age}</p>
-                            <p><strong>Product Category:</strong> ${data.product_category}</p>
-                            <p><strong>Quantity:</strong> ${data.quantity}</p>
-                            <p><strong>Price per Unit:</strong> $${data.price_per_unit.toFixed(2)}</p>
-                            <p><strong>Total Amount:</strong> $${data.total_amount.toFixed(2)}</p>
-                        `;
-                    }
-                });
-        });
+        // Display results of transaction analysis
+        function displayTransactionResult(transaction, errorMessage) {
+            const resultDiv = document.getElementById('transactionResult');
+            if (transaction) {
+                resultDiv.innerHTML = formatTransactionDetails(transaction);
+            } else {
+                resultDiv.innerHTML = `<p>${errorMessage || 'No transaction found with the provided ID.'}</p>`;
+            }
+        }
+
+        // Display transaction details fetched from backend
+        function displayTransactionDetails(data, errorMessage) {
+            const outputDiv = document.getElementById('transactionOutput');
+            if (data && !data.error) {
+                outputDiv.innerHTML = formatTransactionDetails(data);
+            } else {
+                outputDiv.innerHTML = `<p>${errorMessage || data.error}</p>`;
+            }
+        }
+
+        // Format and display transaction details
+        function formatTransactionDetails(transaction) {
+            return `
+                <p><strong>Transaction ID:</strong> ${transaction['Transaction ID'] || transaction.transaction_id}</p>
+                <p><strong>Date:</strong> ${transaction['Date'] || transaction.date}</p>
+                <p><strong>Customer ID:</strong> ${transaction['Customer ID'] || transaction.customer_id}</p>
+                <p><strong>Gender:</strong> ${transaction['Gender'] || transaction.gender}</p>
+                <p><strong>Age:</strong> ${transaction['Age'] || transaction.age}</p>
+                <p><strong>Product Category:</strong> ${transaction['Product Category'] || transaction.product_category}</p>
+                <p><strong>Quantity:</strong> ${transaction['Quantity'] || transaction.quantity}</p>
+                <p><strong>Price per Unit:</strong> $${(transaction['Price per Unit'] || transaction.price_per_unit).toFixed(2)}</p>
+                <p><strong>Total Amount:</strong> $${(transaction['Total Amount'] || transaction.total_amount).toFixed(2)}</p>
+            `;
+        }
     </script>
 </body>
 </html>

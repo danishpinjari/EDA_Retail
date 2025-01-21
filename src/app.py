@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import pandas as pd
 import os
+from fastapi import Request
 import logging
 
 # Configure logging
@@ -32,14 +33,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
-async def read_html():
-    # Check if the index.html file exists
-    if not os.path.exists("templates/index.html"):
-        logging.error("index.html not found in the templates folder!")
-        raise HTTPException(status_code=404, detail="HTML file not found")
-    
-    with open("templates/index.html") as f:
-        return HTMLResponse(content=f.read())
+async def read_html(request: Request):
+    # Pass data to the template for rendering
+    return templates.TemplateResponse("index.html", {"request": request})
 
 # Define models for API responses
 class Insights(BaseModel):
@@ -167,4 +163,3 @@ async def get_transaction(transaction_id: int):
     except Exception as e:
         logging.error("Error fetching transaction ID %s: %s", transaction_id, e)
         raise HTTPException(status_code=500, detail="Error fetching transaction")
-
