@@ -16,7 +16,7 @@ app = FastAPI()
 
 # Load dataset with error handling
 try:
-    ds = pd.read_csv('data/raw/retail_sales_dataset.csv')
+    ds = pd.read_csv(r"C:\Users\DANISH\Desktop\Projects\retail_sales_analysis_project\retail_sales_dataset.csv")
     logging.info("Dataset loaded successfully.")
 except FileNotFoundError:
     logging.error("Dataset not found in the specified path!")
